@@ -27,3 +27,9 @@ Started with a full port scan using `nmap`.
 **Command:**
 ```bash
 nmap -sC -sV -oA nmap/initial 10.10.11.80
+
+    22/tcp - OpenSSH 8.9p1
+
+    80/tcp - nginx 1.18.0
+
+    8080/tcp - Jetty 10.0.28 (XWiki 15.10.8)
