@@ -75,7 +75,7 @@ logout.php              [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 67m
 dashboard.php           [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 133ms]
 ```
 При попытке залогинитья с помощью sql запросов сервер вел себя странно 
-![Страноость] (imageSql.php)
+![Страноость] (imageSql.png)
 * Это мы запонимаем и копаем дальше
 
 
@@ -99,7 +99,7 @@ echo "10.10.11.86 ftp.soulmate.htb" | sudo tee -a /etc/hosts
 * Обнаружен интерфейс со страницей логина и версия CrushFTP ; найдены уязвимости для этой версии  `crushftp-CVE-2025-2825   --> https://github.com/punitdarji/crushftp-CVE-2025-2825/blob/main/payload ` и `CVE-2025-31161 -->  https://github.com/Immersive-Labs-Sec/CVE-2025-31161`
 
 * crushftp-CVE-2025-2825 с его помощью я получили список юзеров админ панели
-![Список_юзеров] (image1.phg)
+![Список_юзеров] (image1.png)
 
 * С помощью CVE-2025-31161 получилось от имени рута(root) создать нового пользователя без аутентификации.
 ```bash
