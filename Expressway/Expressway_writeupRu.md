@@ -4,7 +4,7 @@
 
 **Difficulty:** Easy
 **Platform:** Hack The Box
-**Target host (lab):** `soulmate.htb` — `10.10.11.86` (добавить в `/etc/hosts`)
+**Target ip (lab):**  `10.10.11.87` 
 **Link:** [Soulmate @ HTB](https://app.hackthebox.com/machines/Expressway)
 
 ---
