@@ -5,7 +5,7 @@
 **Difficulty:** Easy
 **Platform:** Hack The Box
 **Target ip (lab):**  `10.10.11.87` 
-**Link:** [Soulmate @ HTB](https://app.hackthebox.com/machines/Expressway)
+**Link:** [Expressway @ HTB](https://app.hackthebox.com/machines/Expressway)
 
 ---
 
