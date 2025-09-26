@@ -1,6 +1,6 @@
 # 📝 Write-up: Soulmate (Hack The Box)
 
-![editor](https://app.hackthebox.com/machines/Expressway)
+![Expressway](https://app.hackthebox.com/machines/Expressway)
 
 **Difficulty:** Easy
 **Platform:** Hack The Box
